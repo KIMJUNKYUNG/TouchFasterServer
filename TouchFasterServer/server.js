@@ -6,19 +6,22 @@ const http = require('http')
 const server = http.createServer(app)
 const io = new Server(server)
 
-const room = io.of('/test')
+const rooms = io.of('/')
 const { getRandomFloat } = require('./utils')
 
-room.on('connection', (clientSocket) => {
+var roomList = ["Test", "Test2"]
+
+let sendRoomList = (clientSocket) => {
+    console.log("Send Room List")
+    clientSocket.emit('roomList', { roomList })
+}
+
+rooms.on('connection', (clientSocket) => {
     console.log("room connection")
-    let randomX = getRandomFloat(0, 290, 2).toString()
-    let randomY = getRandomFloat(0, 744, 2).toString()
-    room.emit("test", { x: randomX, y: randomY })
+    sendRoomList(clientSocket)
+
     clientSocket.on('test', (msg) => {
-        console.log(msg)
-        randomX = getRandomFloat(0, 290, 2).toString()
-        randomY = getRandomFloat(0, 744, 2).toString()
-        room.emit("test", { x: randomX, y: randomY })
+        console.log("Hello World : ", msg)
     })
 })
 
