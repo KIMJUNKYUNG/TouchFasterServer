@@ -8,23 +8,43 @@ const io = new Server(server)
 
 const root = {
     "Home": io.of('/'),
-    "rooms": ["Test1", "Test2"]
+    "roomOwners": [],
+    "rooms": []
 }
 const { getRandomFloat } = require('./utils')
 
-let sendRoomList = (clientSocket) => {
-    console.log("Send Room List : ", root["rooms"])
-    clientSocket.emit('roomList', root["rooms"])
+let sendRoomList = () => {
+    console.log("send Room List, ", root["rooms"])
+    root["Home"].emit('roomList', root["rooms"])
+}
+
+function makeRoom(owner, roomName) {
+    console.log(`make Room, OwnerId : ${owner.id}, roomName ${roomName}`)
+    root["roomOwners"].push(owner)
+    root["rooms"].push(roomName)
+}
+function deleteRoom(ownerId) {
+    console.log(`delete Room, OwnerId : ${ownerId} `)
+    let index = root["roomOwners"].findIndex(owner => owner.id === ownerId)
+    if (index !== -1) {
+        root["roomOwners"].splice(index, 1)
+        root["rooms"].splice(index, 1)
+        sendRoomList()
+    }
 }
 
 root["Home"].on('connection', (clientSocket) => {
-    console.log("room connection")
-    sendRoomList(clientSocket)
+    console.log(`room connection, socketId : ${clientSocket}`)
+    sendRoomList()
 
     clientSocket.on('makeRoom', (roomName) => {
-        console.log("makeRoom : ", roomName)
-        root["rooms"].push(roomName)
-        sendRoomList(clientSocket)
+        console.log("makeRoom, rooName : ", roomName)
+        makeRoom(clientSocket, roomName)
+        sendRoomList()
+    })
+    clientSocket.on('disconnect', () => {
+        console.log(`Disconnect, socektId : ${clientSocket.id}`)
+        deleteRoom(clientSocket.id)
     })
 })
 
