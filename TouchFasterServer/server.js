@@ -6,22 +6,25 @@ const http = require('http')
 const server = http.createServer(app)
 const io = new Server(server)
 
-const rooms = io.of('/')
+const root = {
+    "Home": io.of('/'),
+    "rooms": ["Test1", "Test2"]
+}
 const { getRandomFloat } = require('./utils')
 
-var roomList = ["Test", "Test2"]
-
 let sendRoomList = (clientSocket) => {
-    console.log("Send Room List")
-    clientSocket.emit('roomList', { roomList })
+    console.log("Send Room List : ", root["rooms"])
+    clientSocket.emit('roomList', root["rooms"])
 }
 
-rooms.on('connection', (clientSocket) => {
+root["Home"].on('connection', (clientSocket) => {
     console.log("room connection")
     sendRoomList(clientSocket)
 
-    clientSocket.on('test', (msg) => {
-        console.log("Hello World : ", msg)
+    clientSocket.on('makeRoom', (roomName) => {
+        console.log("makeRoom : ", roomName)
+        root["rooms"].push(roomName)
+        sendRoomList(clientSocket)
     })
 })
 
