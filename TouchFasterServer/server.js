@@ -28,12 +28,12 @@ function makeRoom(ownerSocket, roomName) {
 
 
 function deleteRoom(ownerId) {
-    // console.log(`delete Room, OwnerId : ${ownerId} `)
-    // let index = rooms.findIndex(element => element.owner.id === ownerId)
-    // if (index !== -1) {
-    //     rooms.splice(index, 1)
-    //     broadcastRoomList()
-    // }
+    console.log(`delete Room, OwnerId : ${ownerId} `)
+    let index = rooms.findIndex(element => element.owner === ownerId)
+    if (index !== -1) {
+        rooms.splice(index, 1)
+        broadcastRoomList()
+    }
 }
 
 io.on('connection', (clientSocket) => {
