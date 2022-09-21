@@ -1,78 +1,36 @@
 const express = require('express')
 const app = express()
 
-const { Server } = require("socket.io")
 const http = require('http')
 const server = http.createServer(app)
-const io = new Server(server)
 
-const rooms = []
-const currentUsers = []
+const { broadcastRoomList, createRoom, joinRoom, ready, userLogin, userLogOut, deleteRoom } = require('./router')
 
-const { getRandomFloat } = require('./utils')
+const { Server } = require("socket.io")
+const root = new Server(server)
 
-let broadcastRoomList = () => {
-    console.log("send Room Count, ", rooms.length)
+root.on('connection', (clientSocket) => {
+    console.log(`User connection, socketId : ${clientSocket.id}`)
 
-    io.emit('roomList', { rooms })
-}
+    userLogin(clientSocket)
+    broadcastRoomList(root)
 
-function makeRoom(ownerSocket, roomNumber, roomName) {
-    console.log(`make Room, OwnerId : ${ownerSocket.id}, roomNumber : ${roomNumber}, roomName ${roomName}`)
-
-    ownerSocket.join(roomName)
-    rooms.push({
-        "roomNumber": roomNumber,
-        roomName,
-        "owner": ownerSocket.id,
-        "ownerReady": false,
-        "clientReady": false
-    })
-}
-function joinRoom(clientSocket, roomName) {
-    console.log(`join Room,  : cleintId : ${clientSocket.id}, roomName ${roomName}`)
-
-    clientSocket.join(roomName)
-
-    io.to(roomName).emit("playerJoined");
-}
-
-function deleteRoom(ownerId) {
-    console.log(`delete Room, OwnerId : ${ownerId} `)
-
-    let index = rooms.findIndex(element => element.owner === ownerId)
-    if (index !== -1) {
-        rooms.splice(index, 1)
-        currentUsers.splice(index, 1)
-        broadcastRoomList()
-    }
-}
-
-io.on('connection', (clientSocket) => {
-    console.log(`room connection, socketId : ${clientSocket.id}`)
-
-    currentUsers.push(clientSocket)
-    broadcastRoomList()
-
-    clientSocket.on('makeRoom', (roomName) => {
-        let roomNumber = (rooms.length + 1).toString()
-        makeRoom(clientSocket, roomNumber, roomName)
-        broadcastRoomList()
+    clientSocket.on('createRoom', (roomName) => {
+        createRoom(clientSocket, roomName)
+        broadcastRoomList(root)
     })
     clientSocket.on('joinRoom', (roomNumber) => {
-        let roomName = rooms[roomNumber].roomName
-        joinRoom(clientSocket, roomName)
+        joinRoom(root, clientSocket, roomNumber)
     })
-    clientSocket.on('ready', (bReady, a, b) => {
-        console.log(`Ready, socketId : ${clientSocket.id}, condition : ${bReady}, ${a}, ${b}`)
-
+    clientSocket.on('ready', (isRoomOwner, isReady) => {
+        ready(clientSocket, isRoomOwner, isReady)
     })
 
     clientSocket.on('disconnect', () => {
         console.log(`Disconnect, socektId : ${clientSocket.id}`)
-        deleteRoom(clientSocket.id)
+        deleteRoom(clientSocket)
+        userLogOut(clientSocket)
     })
-
 })
 
 server.listen(3000, async () => {
