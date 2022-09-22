@@ -39,14 +39,26 @@ function ready(clientSocket, isRoomOwner, isReady) {
         element.ownerId === socketId ||
         element.clientId === socketId
     )
-    console.log("------", roomNumber)
+
     if (roomNumber !== -1) {
+        const currentRoom = Rooms[roomNumber]
         if (isRoomOwner) {
-            Rooms[roomNumber].ownerReady = isReady
+            currentRoom.ownerReady = isReady
         } else {
-            Rooms[roomNumber].clientReady = isReady
+            currentRoom.clientReady = isReady
         }
-        broadcastRooms()
+
+        const gameStartReady = currentRoom.ownerReady && currentRoom.clientReady
+        const ownerNumber = LogOnUsers.findIndex(element => element.id === currentRoom.ownerId)
+        console.log(`ownerNumber ${ownerNumber}`)
+        if (ownerNumber !== -1) {
+            const ownerSocket = LogOnUsers[ownerNumber]
+            if (gameStartReady) {
+                ownerSocket.emit('gameReady', true)
+            } else {
+                ownerSocket.emit('gameReady', false)
+            }
+        }
     }
 }
 
