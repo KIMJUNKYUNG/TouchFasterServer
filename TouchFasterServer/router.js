@@ -14,6 +14,7 @@ function createRoom(ownerSocket, roomName) {
         roomName,
         "ownerId": ownerSocket.id,
         "ownerReady": false,
+        "clientId": undefined,
         "clientReady": false
     })
     ownerSocket.join(roomName)
@@ -50,7 +51,7 @@ function ready(clientSocket, isRoomOwner, isReady) {
 
         const gameStartReady = currentRoom.ownerReady && currentRoom.clientReady
         const ownerNumber = LogOnUsers.findIndex(element => element.id === currentRoom.ownerId)
-        console.log(`ownerNumber ${ownerNumber}`)
+        console.log(`game Start Ready : ${gameStartReady}`)
         if (ownerNumber !== -1) {
             const ownerSocket = LogOnUsers[ownerNumber]
             if (gameStartReady) {
@@ -60,6 +61,35 @@ function ready(clientSocket, isRoomOwner, isReady) {
             }
         }
     }
+}
+
+function gameStart(root, clientSocket) {
+    const socketId = clientSocket.id
+    const roomNumber = Rooms.findIndex(element =>
+        element.ownerId === socketId
+    )
+    const currentRoomName = Rooms[roomNumber].roomName
+    console.log(`game Start  : clientId : ${socketId}, roomName : ${currentRoomName}`)
+
+    root.to(currentRoomName).emit("gameStart");
+}
+
+function gameDone(root, clientSocket) {
+    const socketId = clientSocket.id
+    const roomNumber = Rooms.findIndex(element =>
+        element.ownerId === socketId
+    )
+    const currentRoom = Rooms[roomNumber]
+
+    const opponentId = currentRoom.clientId
+    if (currentRoom.clientId === socketId) {
+        opponentId = currentRoom.ownerId
+    }
+
+    const opponentIndex = LogOnUsers.findIndex(element => element.id === opponentId)
+    const opponent = LogOnUsers[opponentIndex]
+    clientSocket.emit('win')
+    opponent.emit('lose')
 }
 
 function userLogin(clientSocket) {
@@ -92,4 +122,9 @@ function deleteRoom(root, clientSocket) {
     }
 }
 
-module.exports = { broadcastRoomList: broadcastRooms, createRoom, createRoom, joinRoom, ready, userLogin, userLogOut, deleteRoom };
+module.exports = {
+    broadcastRooms,
+    createRoom, deleteRoom, joinRoom,
+    ready, gameStart, gameDone,
+    userLogin, userLogOut
+};
