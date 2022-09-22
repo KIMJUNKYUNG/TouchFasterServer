@@ -4,7 +4,7 @@ const app = express()
 const http = require('http')
 const server = http.createServer(app)
 
-const { broadcastRoomList, createRoom, joinRoom, ready, userLogin, userLogOut, deleteRoom } = require('./router')
+const { broadcastRoomList: broadcastRooms, createRoom, joinRoom, ready, userLogin, userLogOut, deleteRoom } = require('./router')
 
 const { Server } = require("socket.io")
 const root = new Server(server)
@@ -13,11 +13,11 @@ root.on('connection', (clientSocket) => {
     console.log(`User connection, socketId : ${clientSocket.id}`)
 
     userLogin(clientSocket)
-    broadcastRoomList(root)
+    broadcastRooms(root)
 
     clientSocket.on('createRoom', (roomName) => {
         createRoom(clientSocket, roomName)
-        broadcastRoomList(root)
+        broadcastRooms(root)
     })
     clientSocket.on('joinRoom', (roomNumber) => {
         joinRoom(root, clientSocket, roomNumber)
@@ -28,7 +28,7 @@ root.on('connection', (clientSocket) => {
 
     clientSocket.on('disconnect', () => {
         console.log(`Disconnect, socektId : ${clientSocket.id}`)
-        deleteRoom(clientSocket)
+        deleteRoom(root, clientSocket)
         userLogOut(clientSocket)
     })
 })

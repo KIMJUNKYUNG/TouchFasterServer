@@ -1,25 +1,21 @@
 const { Rooms, LogOnUsers } = require('./models')
 
-function broadcastRoomList(root) {
+function broadcastRooms(root) {
     console.log(`braocastRoomList, RoomCounnt : ${Rooms.length}`)
-
-    Rooms.push({
-        "roomName": "TTT",
-        "ownerId": "Test",
-        "ownerReady": false,
-        "clientId": undefined,
-        "clientReady": false
-    })
-
     // LogOnUsers.forEach(user => user.emit('roomsList', { Rooms }))
     root.emit('roomList', Rooms)
 }
 
 function createRoom(ownerSocket, roomName) {
-    const socketId = clientSocket.id
+    const socketId = ownerSocket.id
 
     console.log(`make Room, OwnerId : ${socketId}, roomName ${roomName}`)
-
+    Rooms.push({
+        roomName,
+        "ownerId": ownerSocket.id,
+        "ownerReady": false,
+        "clientReady": false
+    })
     ownerSocket.join(roomName)
 }
 function joinRoom(root, clientSocket, roomNumber) {
@@ -50,7 +46,7 @@ function ready(clientSocket, isRoomOwner, isReady) {
         } else {
             Rooms[roomNumber].clientReady = isReady
         }
-        broadcastRoomList()
+        broadcastRooms()
     }
 }
 
@@ -72,16 +68,16 @@ function userLogOut(clientSocket) {
     }
 }
 
-function deleteRoom(clientSocket) {
+function deleteRoom(root, clientSocket) {
     const socketId = clientSocket.id
 
     console.log(`delete Room, OwnerId : ${socketId} `)
 
     let roomNumber = Rooms.findIndex(element => element.ownerId === socketId)
     if (roomNumber !== -1) {
-        Rooms.splice(index, 1)
-        broadcastRoomList()
+        Rooms.splice(roomNumber, 1)
+        broadcastRooms(root)
     }
 }
 
-module.exports = { broadcastRoomList, createRoom, createRoom, joinRoom, ready, userLogin, userLogOut, deleteRoom };
+module.exports = { broadcastRoomList: broadcastRooms, createRoom, createRoom, joinRoom, ready, userLogin, userLogOut, deleteRoom };
