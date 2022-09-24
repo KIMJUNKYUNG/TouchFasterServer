@@ -149,10 +149,21 @@ function deleteRoomWithSocket(root, clientSocket) {
     }
 }
 
+function sendUserList(root, clientSocket) {
+    const socketId = clientSocket.id
+    console.log(`send User List, id : ${socketId}`)
+
+    const logOnUsersIds = LogOnUsers.map(element => {
+        return element.id
+    })
+    clientSocket.emit('userList', logOnUsersIds)
+}
+
 module.exports = {
     broadcastRooms,
     createRoom, deleteRoom,
     joinRoom, quitRoom,
     ready, gameStart, gameDone,
-    userLogin, userLogOut
+    userLogin, userLogOut,
+    sendUserList
 };

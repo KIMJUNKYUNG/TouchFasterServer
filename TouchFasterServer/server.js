@@ -9,7 +9,8 @@ const {
     createRoom, deleteRoom,
     joinRoom, quitRoom,
     ready, gameStart, gameDone,
-    userLogin, userLogOut
+    userLogin, userLogOut,
+    sendUserList
 } = require('./router')
 
 const { Server } = require("socket.io")
@@ -46,6 +47,10 @@ root.on('connection', (clientSocket) => {
     })
     clientSocket.on('gameDone', () => {
         gameDone(root, clientSocket)
+    })
+
+    clientSocket.on('userList', () => {
+        sendUserList(root, clientSocket)
     })
 
     clientSocket.on('disconnect', () => {
