@@ -7,7 +7,8 @@ const server = http.createServer(app)
 const {
     broadcastRooms,
     createRoom, deleteRoom,
-    joinRoom, ready, gameStart, gameDone,
+    joinRoom, quitRoom,
+    ready, gameStart, gameDone,
     userLogin, userLogOut
 } = require('./router')
 
@@ -17,18 +18,28 @@ const root = new Server(server)
 root.on('connection', (clientSocket) => {
     console.log(`User connection, socketId : ${clientSocket.id}`)
 
-    userLogin(clientSocket)
+    userLogin(root, clientSocket)
     broadcastRooms(root)
 
     clientSocket.on('createRoom', (roomName) => {
-        createRoom(clientSocket, roomName)
+        createRoom(root, clientSocket, roomName)
         broadcastRooms(root)
     })
+
     clientSocket.on('joinRoom', (roomNumber) => {
         joinRoom(root, clientSocket, roomNumber)
     })
+    clientSocket.on('quitRoom', (isRoomOwner, roomName) => {
+        if (isRoomOwner) {
+            deleteRoom(root, roomName)
+        } else {
+            quitRoom(root, roomName)
+        }
+    })
+
+
     clientSocket.on('ready', (isRoomOwner, isReady) => {
-        ready(clientSocket, isRoomOwner, isReady)
+        ready(root, clientSocket, isRoomOwner, isReady)
     })
     clientSocket.on('gameStart', () => {
         gameStart(root, clientSocket)
@@ -38,9 +49,7 @@ root.on('connection', (clientSocket) => {
     })
 
     clientSocket.on('disconnect', () => {
-        console.log(`Disconnect, socektId : ${clientSocket.id}`)
-        deleteRoom(root, clientSocket)
-        userLogOut(clientSocket)
+        userLogOut(root, clientSocket)
     })
 })
 

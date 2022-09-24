@@ -6,7 +6,7 @@ function broadcastRooms(root) {
     root.emit('roomList', Rooms)
 }
 
-function createRoom(ownerSocket, roomName) {
+function createRoom(root, ownerSocket, roomName) {
     const socketId = ownerSocket.id
 
     console.log(`make Room, OwnerId : ${socketId}, roomName ${roomName}`)
@@ -15,7 +15,8 @@ function createRoom(ownerSocket, roomName) {
         "ownerId": ownerSocket.id,
         "ownerReady": false,
         "clientId": undefined,
-        "clientReady": false
+        "clientReady": false,
+        "isFull": false
     })
     ownerSocket.join(roomName)
 }
@@ -27,11 +28,26 @@ function joinRoom(root, clientSocket, roomNumber) {
     console.log(`join Room,  : clientId : ${socketId}, roomNumber ${roomNumber}`)
 
     currentRoom.clientId = socketId
+    currentRoom.isFull = true
     clientSocket.join(roomName)
 
     root.to(roomName).emit("roomReady");
+    broadcastRooms(root)
 }
-function ready(clientSocket, isRoomOwner, isReady) {
+function quitRoom(root, roomName) {
+    console.log(`quit Room, RoomName : ${roomName} `)
+
+    let roomNumber = Rooms.findIndex(element => element.roomName === roomName)
+    if (roomNumber !== -1) {
+        const currentRoom = Rooms[roomNumber]
+        currentRoom.clientId = undefined
+        currentRoom.clientReady = false
+        currentRoom.isFull = false
+        broadcastRooms(root)
+    }
+}
+
+function ready(root, clientSocket, isRoomOwner, isReady) {
     const socketId = clientSocket.id
 
     console.log(`Ready, isRoomOwner : clientId : ${socketId} ${isRoomOwner}, isReady : ${isReady}`)
@@ -92,14 +108,14 @@ function gameDone(root, clientSocket) {
     opponent.emit('lose')
 }
 
-function userLogin(clientSocket) {
+function userLogin(root, clientSocket) {
     const socketId = clientSocket.id
 
     console.log(`User LogIn, Id : ${socketId}`)
     LogOnUsers.push(clientSocket)
 }
 
-function userLogOut(clientSocket) {
+function userLogOut(root, clientSocket) {
     const socketId = clientSocket.id
 
     console.log(`User LogOut, Id : ${socketId} `)
@@ -108,12 +124,23 @@ function userLogOut(clientSocket) {
     if (userNumber !== -1) {
         LogOnUsers.splice(userNumber, 1)
     }
+    deleteRoomWithSocket(root, clientSocket)
 }
 
-function deleteRoom(root, clientSocket) {
+function deleteRoom(root, roomName) {
+    console.log(`delete Room, RoomName : ${roomName} `)
+
+    let roomNumber = Rooms.findIndex(element => element.roomName === roomName)
+    if (roomNumber !== -1) {
+        Rooms.splice(roomNumber, 1)
+        broadcastRooms(root)
+    }
+}
+
+function deleteRoomWithSocket(root, clientSocket) {
     const socketId = clientSocket.id
 
-    console.log(`delete Room, OwnerId : ${socketId} `)
+    console.log(`delete Room With Socket, OwnerId : ${socketId} `)
 
     let roomNumber = Rooms.findIndex(element => element.ownerId === socketId)
     if (roomNumber !== -1) {
@@ -124,7 +151,8 @@ function deleteRoom(root, clientSocket) {
 
 module.exports = {
     broadcastRooms,
-    createRoom, deleteRoom, joinRoom,
+    createRoom, deleteRoom,
+    joinRoom, quitRoom,
     ready, gameStart, gameDone,
     userLogin, userLogOut
 };
