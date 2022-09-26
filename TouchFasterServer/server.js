@@ -6,6 +6,7 @@ const server = http.createServer(app)
 
 const {
     broadcastRooms,
+    applyNickName,
     createRoom, deleteRoom,
     joinRoom, quitRoom,
     ready, gameStart, gameDone,
@@ -21,6 +22,10 @@ root.on('connection', (clientSocket) => {
 
     userLogin(root, clientSocket)
     broadcastRooms(root)
+
+    clientSocket.on('nickName', (nickName) => {
+        applyNickName(root, clientSocket, nickName)
+    })
 
     clientSocket.on('createRoom', (roomName) => {
         createRoom(root, clientSocket, roomName)

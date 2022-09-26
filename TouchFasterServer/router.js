@@ -6,12 +6,22 @@ function broadcastRooms(root) {
     root.emit('roomList', Rooms)
 }
 
+function applyNickName(root, clientSocket, nickName) {
+    console.log(`applyNickname, nickName : ${nickName}`)
+    const userNumber = LogOnUsers.findIndex(element => element.id === clientSocket.id)
+    if (userNumber !== -1) {
+        const currentUser = LogOnUsers[userNumber]
+        currentUser.nickName = nickName
+    }
+}
+
 function createRoom(root, ownerSocket, roomName) {
     const socketId = ownerSocket.id
 
     console.log(`make Room, OwnerId : ${socketId}, roomName ${roomName}`)
     Rooms.push({
         roomName,
+        "nickName": undefined,
         "ownerId": ownerSocket.id,
         "ownerReady": false,
         "clientId": undefined,
@@ -113,6 +123,7 @@ function userLogin(root, clientSocket) {
 
     console.log(`User LogIn, Id : ${socketId}`)
     LogOnUsers.push(clientSocket)
+    clientSocket.emit("connection")
 }
 
 function userLogOut(root, clientSocket) {
@@ -153,14 +164,15 @@ function sendUserList(root, clientSocket) {
     const socketId = clientSocket.id
     console.log(`send User List, id : ${socketId}`)
 
-    const logOnUsersIds = LogOnUsers.map(element => {
-        return element.id
+    const logOnUsersNickNames = LogOnUsers.map(element => {
+        return element.nickName
     })
-    clientSocket.emit('userList', logOnUsersIds)
+    clientSocket.emit('userList', logOnUsersNickNames)
 }
 
 module.exports = {
     broadcastRooms,
+    applyNickName,
     createRoom, deleteRoom,
     joinRoom, quitRoom,
     ready, gameStart, gameDone,
