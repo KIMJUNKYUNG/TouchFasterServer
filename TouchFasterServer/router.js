@@ -103,19 +103,16 @@ function gameStart(root, clientSocket) {
 function gameDone(root, clientSocket) {
     const socketId = clientSocket.id
     const roomNumber = Rooms.findIndex(element =>
-        element.ownerId === socketId
+        element.ownerId === socketId ||
+        element.clientId === socketId
     )
-    const currentRoom = Rooms[roomNumber]
+    const currentRoomName = Rooms[roomNumber].roomName
 
-    const opponentId = currentRoom.clientId
-    if (currentRoom.clientId === socketId) {
-        opponentId = currentRoom.ownerId
-    }
+    let userNumber = LogOnUsers.findIndex(element => element.id === socketId)
+    const winnerNickName = LogOnUsers[userNumber].nickName
 
-    const opponentIndex = LogOnUsers.findIndex(element => element.id === opponentId)
-    const opponent = LogOnUsers[opponentIndex]
-    clientSocket.emit('win')
-    opponent.emit('lose')
+    console.log(`Game Done, Id : winner : ${winnerNickName}`)
+    root.to(currentRoomName).emit("gameDone", winnerNickName)
 }
 
 function userLogin(root, clientSocket) {
