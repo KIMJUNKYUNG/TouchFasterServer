@@ -60,7 +60,7 @@ function quitRoom(root, roomName) {
 function ready(root, clientSocket, isRoomOwner, isReady) {
     const socketId = clientSocket.id
 
-    console.log(`Ready, isRoomOwner : clientId : ${socketId} ${isRoomOwner}, isReady : ${isReady}`)
+    console.log(`Ready, isRoomOwner :${isRoomOwner}, clientId : ${socketId} , isReady : ${isReady}`)
 
     let roomNumber = Rooms.findIndex(element =>
         element.ownerId === socketId ||
@@ -75,17 +75,11 @@ function ready(root, clientSocket, isRoomOwner, isReady) {
             currentRoom.clientReady = isReady
         }
 
-        const gameStartReady = currentRoom.ownerReady && currentRoom.clientReady
-        const ownerNumber = LogOnUsers.findIndex(element => element.id === currentRoom.ownerId)
-        console.log(`game Start Ready : ${gameStartReady}`)
-        if (ownerNumber !== -1) {
-            const ownerSocket = LogOnUsers[ownerNumber]
-            if (gameStartReady) {
-                ownerSocket.emit('gameReady', true)
-            } else {
-                ownerSocket.emit('gameReady', false)
-            }
-        }
+        const roomName = currentRoom.roomName
+        root.to(roomName).emit("gameReady", {
+            "p1": currentRoom.ownerReady,
+            "p2": currentRoom.clientReady
+        })
     }
 }
 
