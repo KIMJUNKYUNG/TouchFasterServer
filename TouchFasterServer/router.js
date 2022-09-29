@@ -1,11 +1,14 @@
 const { Rooms, LogOnUsers } = require('./models')
 
 function broadcastRooms(root) {
-    console.log(`braocastRoomList, RoomCounnt : ${Rooms.length}`)
+    console.log(`braocast Room List, RoomCounnt : ${Rooms.length}`)
     // LogOnUsers.forEach(user => user.emit('roomsList', { Rooms }))
     root.emit('roomList', Rooms)
 }
-
+function broadcastRoomCondition(root, roomName, roomCondition) {
+    console.log(`braocast Room Condtion, RoomName : ${roomName}`)
+    root.to(roomName).emit('roomCondition', roomCondition)
+}
 function applyNickName(root, clientSocket, nickName) {
     console.log(`applyNickname, nickName : ${nickName}`)
     const userNumber = LogOnUsers.findIndex(element => element.id === clientSocket.id)
@@ -21,14 +24,19 @@ function createRoom(root, ownerSocket, roomName) {
     console.log(`make Room, OwnerId : ${socketId}, roomName ${roomName}`)
     Rooms.push({
         roomName,
-        "nickName": undefined,
+
+        "ownerNickName": ownerSocket.nickName,
         "ownerId": ownerSocket.id,
         "ownerReady": false,
+
+        "clientNickName": undefined,
         "clientId": undefined,
         "clientReady": false,
+
         "isFull": false
     })
     ownerSocket.join(roomName)
+    broadcastRoomCondition(root, roomName, Rooms.at(-1))
 }
 function joinRoom(root, clientSocket, roomNumber) {
     const currentRoom = Rooms[roomNumber]
@@ -37,12 +45,16 @@ function joinRoom(root, clientSocket, roomNumber) {
 
     console.log(`join Room,  : clientId : ${socketId}, roomNumber ${roomNumber}`)
 
+    const userNumber = LogOnUsers.findIndex(element => element.id === socketId)
+    if (userNumber !== -1) {
+        currentRoom.clientNickName = LogOnUsers[userNumber].nickName
+    }
     currentRoom.clientId = socketId
     currentRoom.isFull = true
     clientSocket.join(roomName)
 
-    root.to(roomName).emit("roomReady");
     broadcastRooms(root)
+    broadcastRoomCondition(root, roomName, currentRoom)
 }
 function quitRoom(root, roomName) {
     console.log(`quit Room, RoomName : ${roomName} `)
@@ -50,13 +62,14 @@ function quitRoom(root, roomName) {
     let roomNumber = Rooms.findIndex(element => element.roomName === roomName)
     if (roomNumber !== -1) {
         const currentRoom = Rooms[roomNumber]
+        currentRoom.clientNickName = undefined
         currentRoom.clientId = undefined
         currentRoom.clientReady = false
         currentRoom.isFull = false
         broadcastRooms(root)
+        broadcastRoomCondition(root, roomName, currentRoom)
     }
 }
-
 function ready(root, clientSocket, isRoomOwner, isReady) {
     const socketId = clientSocket.id
 
@@ -76,10 +89,7 @@ function ready(root, clientSocket, isRoomOwner, isReady) {
         }
 
         const roomName = currentRoom.roomName
-        root.to(roomName).emit("gameReady", {
-            "p1": currentRoom.ownerReady,
-            "p2": currentRoom.clientReady
-        })
+        broadcastRoomCondition(root, roomName, currentRoom)
     }
 }
 
