@@ -1,4 +1,5 @@
 const { Rooms, LogOnUsers } = require('./models')
+const { HighScore } = require("./highScore")
 
 function broadcastRooms(root) {
     console.log(`braocast Room List, RoomCounnt : ${Rooms.length}`)
@@ -104,7 +105,19 @@ function gameStart(root, clientSocket) {
     root.to(currentRoomName).emit("gameStart");
 }
 
-function gameDone(root, clientSocket) {
+const updateHighScore = async (gameDoneTime) => {
+    try {
+        console.log(`Update HighScore : ${gameDoneTime}`)
+        let highScore = new HighScore({
+            gameDoneTime
+        })
+        await highScore.save()
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+function gameDone(root, clientSocket, gameDoneTime) {
     const socketId = clientSocket.id
     const roomNumber = Rooms.findIndex(element =>
         element.ownerId === socketId ||
@@ -115,8 +128,10 @@ function gameDone(root, clientSocket) {
     let userNumber = LogOnUsers.findIndex(element => element.id === socketId)
     const winnerNickName = LogOnUsers[userNumber].nickName
 
-    console.log(`Game Done, Id : winner : ${winnerNickName}`)
-    root.to(currentRoomName).emit("gameDone", winnerNickName)
+    console.log(`Game Done, Id : winner : ${winnerNickName}, Time : ${gameDoneTime}`)
+    root.to(currentRoomName).emit("gameDone", winnerNickName, gameDoneTime)
+
+    updateHighScore(gameDoneTime)
 }
 
 function userLogin(root, clientSocket) {
