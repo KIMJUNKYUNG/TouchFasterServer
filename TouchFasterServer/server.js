@@ -14,7 +14,7 @@ const {
     applyNickName,
     createRoom, deleteRoom,
     joinRoom, quitRoom,
-    ready, gameStart, gameDone,
+    ready, gameStart, multiGameDone, singleGameDone,
     userLogin, userLogOut,
     sendUserList, sendHighScores
 } = require('./router')
@@ -63,8 +63,12 @@ const listener = async () => {
         clientSocket.on('gameStart', () => {
             gameStart(root, clientSocket)
         })
-        clientSocket.on('gameDone', (gameDoneTime) => {
-            gameDone(root, clientSocket, gameDoneTime)
+        clientSocket.on('gameDone', (gameDoneTime, isSingle) => {
+            if (isSingle) {
+                singleGameDone(root, clientSocket, gameDoneTime)
+            } else {
+                multiGameDone(root, clientSocket, gameDoneTime)
+            }
         })
 
         clientSocket.on('userList', () => {

@@ -118,7 +118,7 @@ const updateHighScore = async (nickName, gameDoneTime) => {
     }
 }
 
-function gameDone(root, clientSocket, gameDoneTime) {
+function multiGameDone(root, clientSocket, gameDoneTime) {
     const socketId = clientSocket.id
     const roomNumber = Rooms.findIndex(element =>
         element.ownerId === socketId ||
@@ -130,9 +130,19 @@ function gameDone(root, clientSocket, gameDoneTime) {
     const winnerNickName = LogOnUsers[userNumber].nickName
 
     console.log(`Game Done, Id : winner : ${winnerNickName}, Time : ${gameDoneTime}`)
-    root.to(currentRoomName).emit("gameDone", winnerNickName, gameDoneTime)
+    root.to(currentRoomName).emit("multiGameDone", winnerNickName, gameDoneTime)
 
     updateHighScore(winnerNickName, gameDoneTime)
+}
+
+function singleGameDone(root, clientSocket, gameDoneTime) {
+    const socketId = clientSocket.id
+
+    let userNumber = LogOnUsers.findIndex(element => element.id === socketId)
+    const nickName = LogOnUsers[userNumber].nickName
+
+    console.log(`Single Game Done, nickName : ${nickName}, Time : ${gameDoneTime}`)
+    updateHighScore(nickName, gameDoneTime)
 }
 
 function userLogin(root, clientSocket) {
@@ -204,7 +214,7 @@ module.exports = {
     applyNickName,
     createRoom, deleteRoom,
     joinRoom, quitRoom,
-    ready, gameStart, gameDone,
+    ready, gameStart, multiGameDone, singleGameDone,
     userLogin, userLogOut,
     sendUserList, sendHighScores
 };
