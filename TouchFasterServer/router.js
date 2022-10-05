@@ -105,10 +105,11 @@ function gameStart(root, clientSocket) {
     root.to(currentRoomName).emit("gameStart");
 }
 
-const updateHighScore = async (gameDoneTime) => {
+const updateHighScore = async (nickName, gameDoneTime) => {
     try {
         console.log(`Update HighScore : ${gameDoneTime}`)
         let highScore = new HighScore({
+            nickName,
             gameDoneTime
         })
         await highScore.save()
@@ -131,7 +132,7 @@ function gameDone(root, clientSocket, gameDoneTime) {
     console.log(`Game Done, Id : winner : ${winnerNickName}, Time : ${gameDoneTime}`)
     root.to(currentRoomName).emit("gameDone", winnerNickName, gameDoneTime)
 
-    updateHighScore(gameDoneTime)
+    updateHighScore(winnerNickName, gameDoneTime)
 }
 
 function userLogin(root, clientSocket) {
@@ -186,6 +187,18 @@ function sendUserList(root, clientSocket) {
     clientSocket.emit('userList', logOnUsersNickNames)
 }
 
+const sendHighScores = async (root, clientSocket) => {
+    try {
+        console.log(`send HighScores : ${clientSocket.nickName}`)
+        const highScores = await HighScore.find()
+            .sort({ gameDoneTime: 1 })
+
+        clientSocket.emit("highScore", highScores)
+    } catch (err) {
+        console.log(err)
+    }
+}
+
 module.exports = {
     broadcastRooms,
     applyNickName,
@@ -193,5 +206,5 @@ module.exports = {
     joinRoom, quitRoom,
     ready, gameStart, gameDone,
     userLogin, userLogOut,
-    sendUserList
+    sendUserList, sendHighScores
 };

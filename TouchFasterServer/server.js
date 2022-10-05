@@ -16,7 +16,7 @@ const {
     joinRoom, quitRoom,
     ready, gameStart, gameDone,
     userLogin, userLogOut,
-    sendUserList
+    sendUserList, sendHighScores
 } = require('./router')
 
 const listener = async () => {
@@ -69,6 +69,9 @@ const listener = async () => {
 
         clientSocket.on('userList', () => {
             sendUserList(root, clientSocket)
+        })
+        clientSocket.on('highScore', () => {
+            sendHighScores(root, clientSocket)
         })
 
         clientSocket.on('disconnect', () => {
