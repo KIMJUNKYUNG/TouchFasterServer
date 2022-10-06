@@ -57,9 +57,9 @@ function joinRoom(root, clientSocket, roomNumber) {
     broadcastRoomCondition(root, roomName, currentRoom)
 }
 function quitRoom(root, roomName) {
-    console.log(`quit Room, RoomName : ${roomName} `)
-
     let roomNumber = Rooms.findIndex(element => element.roomName === roomName)
+    console.log(`quit Room, RoomName : ${roomName} , RoomNumber : ${roomNumber}`)
+
     if (roomNumber !== -1) {
         const currentRoom = Rooms[roomNumber]
         currentRoom.clientNickName = undefined
@@ -164,10 +164,16 @@ function userLogOut(root, clientSocket) {
 }
 
 function deleteRoom(root, roomName) {
-    console.log(`delete Room, RoomName : ${roomName} `)
+
 
     let roomNumber = Rooms.findIndex(element => element.roomName === roomName)
     if (roomNumber !== -1) {
+        console.log(`delete Room, roomNumber : ${roomNumber} `)
+        const currentRoom = Rooms[roomNumber]
+        let userNumber = LogOnUsers.findIndex(element => element.id === currentRoom.clientId)
+        if (userNumber !== -1) {
+            LogOnUsers[userNumber].emit('roomClosed')
+        }
         Rooms.splice(roomNumber, 1)
     }
 }
@@ -185,11 +191,12 @@ function deleteRoomWithSocket(root, clientSocket) {
 
 function sendUserList(root, clientSocket) {
     const socketId = clientSocket.id
-    console.log(`send User List, id : ${socketId}`)
+
 
     const logOnUsersNickNames = LogOnUsers.map(element => {
         return element.nickName
     })
+    console.log(`send User List, id : ${socketId}, nickNames : ${logOnUsersNickNames}`)
     clientSocket.emit('userList', logOnUsersNickNames)
 }
 
