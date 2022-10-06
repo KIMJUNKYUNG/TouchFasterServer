@@ -1,10 +1,10 @@
 const { Rooms, LogOnUsers } = require('./models')
 const { HighScore } = require("./highScore")
 
-function broadcastRooms(root) {
-    console.log(`braocast Room List, RoomCounnt : ${Rooms.length}`)
+function sendRoomList(root, clientSocket) {
+    console.log(`Send Room List, RoomCounnt : ${Rooms.length}, nickName : ${clientSocket.nickName}`)
     // LogOnUsers.forEach(user => user.emit('roomsList', { Rooms }))
-    root.emit('roomList', Rooms)
+    clientSocket.emit('roomList', Rooms)
 }
 function broadcastRoomCondition(root, roomName, roomCondition) {
     console.log(`braocast Room Condtion, RoomName : ${roomName}`)
@@ -54,7 +54,6 @@ function joinRoom(root, clientSocket, roomNumber) {
     currentRoom.isFull = true
     clientSocket.join(roomName)
 
-    broadcastRooms(root)
     broadcastRoomCondition(root, roomName, currentRoom)
 }
 function quitRoom(root, roomName) {
@@ -67,7 +66,6 @@ function quitRoom(root, roomName) {
         currentRoom.clientId = undefined
         currentRoom.clientReady = false
         currentRoom.isFull = false
-        broadcastRooms(root)
         broadcastRoomCondition(root, roomName, currentRoom)
     }
 }
@@ -171,7 +169,6 @@ function deleteRoom(root, roomName) {
     let roomNumber = Rooms.findIndex(element => element.roomName === roomName)
     if (roomNumber !== -1) {
         Rooms.splice(roomNumber, 1)
-        broadcastRooms(root)
     }
 }
 
@@ -183,7 +180,6 @@ function deleteRoomWithSocket(root, clientSocket) {
     let roomNumber = Rooms.findIndex(element => element.ownerId === socketId)
     if (roomNumber !== -1) {
         Rooms.splice(roomNumber, 1)
-        broadcastRooms(root)
     }
 }
 
@@ -210,7 +206,7 @@ const sendHighScores = async (root, clientSocket) => {
 }
 
 module.exports = {
-    broadcastRooms,
+    sendRoomList,
     applyNickName,
     createRoom, deleteRoom,
     joinRoom, quitRoom,

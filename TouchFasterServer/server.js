@@ -10,7 +10,7 @@ const root = new Server(server)
 const mongoose = require('mongoose')
 
 const {
-    broadcastRooms,
+    sendRoomList,
     applyNickName,
     createRoom, deleteRoom,
     joinRoom, quitRoom,
@@ -34,7 +34,6 @@ const listener = async () => {
         console.log(`User connection, socketId : ${clientSocket.id}`)
 
         userLogin(root, clientSocket)
-        broadcastRooms(root)
 
         clientSocket.on('nickName', (nickName) => {
             applyNickName(root, clientSocket, nickName)
@@ -42,9 +41,7 @@ const listener = async () => {
 
         clientSocket.on('createRoom', (roomName) => {
             createRoom(root, clientSocket, roomName)
-            broadcastRooms(root)
         })
-
         clientSocket.on('joinRoom', (roomNumber) => {
             joinRoom(root, clientSocket, roomNumber)
         })
@@ -54,6 +51,9 @@ const listener = async () => {
             } else {
                 quitRoom(root, roomName)
             }
+        })
+        clientSocket.on('roomList', () => {
+            sendRoomList(root, clientSocket)
         })
 
 
